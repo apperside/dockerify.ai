@@ -7,7 +7,7 @@ import {ux} from '@oclif/core/ux'
 
 type NeedFileContentResponse = {need_file_contents: string[]}
 type NeedClarificationResponse = {need_clarification: string}
-type FilesResponse = {files_to_generate: {path: string; content: string}[]}
+type FilesResponse = {files_to_generate: {path: string; fileContent: string}[]}
 
 export default class World extends Command {
   static args = {}
@@ -26,8 +26,25 @@ hello world! (./src/commands/hello/world.ts)
   askFileContents = async (paths: string[]) => {
     let contents: string[] = []
     let counter = 0
+
+    let inquiredMessage = 'Dockerify needs the content of the following files, do you accept to provide them?'
+    paths.forEach((path) => {
+      inquiredMessage += `\n- ${path}`
+    })
+
+    const answers = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'accept',
+        message: inquiredMessage,
+      },
+    ])
+    if (!answers.accept) {
+      return ''
+    }
+    
     while (counter < paths.length) {
-      ux.action.start('Starting process')
+      ux.action.start('reading file content for ' + paths[counter] + '...')
       // ux.action.status = 'Process still in progress'
       // const answers = await inquirer.prompt([
       //   {
@@ -49,40 +66,31 @@ hello world! (./src/commands/hello/world.ts)
     }
     return contents.map((content, index) => `Here is the content of ${paths[index]}: \n\n ${content}    `).join('\n')
   }
+
+  parseResponse = async (data: NeedFileContentResponse | NeedClarificationResponse | FilesResponse): Promise<any> => {
+    if ('need_file_contents' in data) {
+      const newData = await this.askFileContents(data.need_file_contents)
+      if (newData) {
+        const result = await api.postMessage(newData)
+        return (await this.parseResponse(result)) as any
+      }
+      return ''
+    }
+    // if ('need_clarification' in data) {
+    //   return data.need_clarification
+    // }
+    if ('files_to_generate' in data) {
+      data.files_to_generate.forEach((file) => {
+        fs.writeFileSync(path.join(process.cwd(), file.path), file.fileContent, 'utf8')
+      })
+      return ''
+    }
+  }
+
   async run(): Promise<void> {
     await api
       .postMessage('package.json')
-      .then(async (data) => {
-        if (data.need_file_contents) {
-          const fileContents = []
-          console.log("ciao")
-          // for (const filePath of data.need_file_contents) {
-          //   const root = process.cwd()
-          //   const fileContent = fs.readFileSync(path.join(process.cwd(), filePath), 'utf8')
-          //   fileContents.push({path: filePath, content: fileContent})
-          // }
-         try {
-           const result = await this.askFileContents(data.need_file_contents)
-           const newData = await await api.postMessage(result)
-           console.log('newData', newData)
-         } catch (err) {
-          console.error(err)
-         }
-          // return fileContents.reduce((acc, {path, content}) => {
-          //   return acc + `this is the content of ${path}: \n\n ${content}    `
-          // }, '')
-          console.log('need_file_contents', data)
-          return
-        }
-        if (data.need_clarification) {
-          console.log('need_clarification', data)
-          return
-        }
-        if (data.files_to_generate) {
-          console.log('files_to_generate', data)
-          return
-        }
-      })
+      .then(this.parseResponse)
       .catch((err) => {
         console.error(err)
       })
