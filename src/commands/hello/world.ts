@@ -7,7 +7,11 @@ import {ux} from '@oclif/core/ux'
 
 type NeedFileContentResponse = {need_file_contents: string[]}
 type NeedClarificationResponse = {need_clarification: string}
-type FilesResponse = {files_to_generate: {path: string; fileContent: string}[]}
+type FilesResponse = {
+  type_of_project: string
+  type_of_project_reason: string
+  files_to_generate: {path: string; fileContent: string}[]
+}
 
 export default class World extends Command {
   static args = {}
@@ -81,6 +85,26 @@ hello world! (./src/commands/hello/world.ts)
       return (await this.parseResponse(result)) as any
     }
     if ('files_to_generate' in data) {
+      this.log(`Detected project type: ${data.type_of_project} because ${data.type_of_project_reason}`)
+      const inquirerCOnfirm = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'accept',
+          message: 'Do you want to generate docker files for this kind of project?',
+        },
+      ])
+      if (!inquirerCOnfirm.accept) {
+        const askKindOfProject = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'kind_of_project',
+            message: 'What kind of project is this?',
+          },
+        ])
+        
+        const result = await api.postMessage(askKindOfProject.kind_of_project)
+        return (await this.parseResponse(result)) as any
+      }
       data.files_to_generate.forEach((file) => {
         try {
           ux.action.start('generating file ' + file.path + '...')
