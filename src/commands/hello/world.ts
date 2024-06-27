@@ -42,17 +42,9 @@ hello world! (./src/commands/hello/world.ts)
     if (!answers.accept) {
       return ''
     }
-    
+
     while (counter < paths.length) {
       ux.action.start('reading file content for ' + paths[counter] + '...')
-      // ux.action.status = 'Process still in progress'
-      // const answers = await inquirer.prompt([
-      //   {
-      //     type: 'input',
-      //     name: 'content',
-      //     message: `Please input the content of ${paths[counter]}`,
-      //   },
-      // ])
       const fakePromise = new Promise<void>((resolve, reject) => {
         setTimeout(() => {
           resolve()
@@ -76,24 +68,44 @@ hello world! (./src/commands/hello/world.ts)
       }
       return ''
     }
-    // if ('need_clarification' in data) {
-    //   return data.need_clarification
-    // }
+    if ('need_clarification' in data) {
+      const inquirerMessage = `Dockerify needs clarification on the following: \n\n ${data.need_clarification}`
+      const answers = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'clarification',
+          message: inquirerMessage,
+        },
+      ])
+      const result = await api.postMessage(answers.clarification)
+      return (await this.parseResponse(result)) as any
+    }
     if ('files_to_generate' in data) {
       data.files_to_generate.forEach((file) => {
-        fs.writeFileSync(path.join(process.cwd(), file.path), file.fileContent, 'utf8')
+        try {
+          ux.action.start('generating file ' + file.path + '...')
+          fs.writeFileSync(path.join(process.cwd(), file.path), file.fileContent, 'utf8')
+          ux.action.stop()
+        } catch (err) {
+          console.error('error generating file ' + file.path, err)
+        }
       })
-      return ''
+      return 'your project has been dockerified! 🐳🎉'
     }
   }
 
+  getFilesAtRoot = async () => {
+    const files = fs.readdirSync(process.cwd())
+    return files
+  }
   async run(): Promise<void> {
+    const filesAtRoot = (await this.getFilesAtRoot()).map((file) => `- ${file}`).join('\n')
     await api
-      .postMessage('package.json')
+      .postMessage(filesAtRoot)
       .then(this.parseResponse)
       .catch((err) => {
         console.error(err)
       })
-    this.log('hello world! (./src/commands/hello/world.ts)')
+    this.log('your project has been dockerified! 🐳🎉')
   }
 }
