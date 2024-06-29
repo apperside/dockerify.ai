@@ -1,9 +1,9 @@
 import {Command} from '@oclif/core'
-import api from '../../api.js'
 import * as fs from 'fs'
 import * as path from 'path'
 import inquirer from 'inquirer'
 import {ux} from '@oclif/core/ux'
+import api from '../api.js'
 
 type NeedFileContentResponse = {need_file_contents: string[]}
 type NeedClarificationResponse = {need_clarification: string}
@@ -120,6 +120,18 @@ export default class MainCommand extends Command {
   }
   async run(): Promise<void> {
     const filesAtRoot = (await this.getFilesAtRoot()).map((file) => `- ${file}`).join('\n')
+    const inquirerMessage =
+      'Dockerify will now send the list of files (NOT THEIR CONTENT) at the root of your project to the API. Do you accept to send this information?'
+    const answers = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'accept',
+        message: inquirerMessage,
+      },
+    ])
+    if (!answers.accept) {
+      return
+    }
     await api
       .postMessage(filesAtRoot)
       .then(this.parseResponse)
