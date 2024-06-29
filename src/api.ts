@@ -3,7 +3,7 @@ import OpenAI from 'openai'
 import {TextContentBlock} from 'openai/resources/beta/threads/messages.mjs'
 import ora from 'ora'
 
-const OPEN_AI_API_KEY = 'sk-proj-cTdBJ1mSomMv5iMQ3tCPT3BlbkFJra7ArBiqgxLVQbpoqFVQ'
+const OPEN_AI_API_KEY = 'sk-proj-RImHWofGYj7U9gmUPrx5T3BlbkFJMqDRfAW53nfYEIkYLJOy'
 const openai = new OpenAI({
   apiKey: OPEN_AI_API_KEY,
 })
