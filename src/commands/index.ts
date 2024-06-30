@@ -1,9 +1,10 @@
-import {Command} from '@oclif/core'
+import { Command, Flags } from '@oclif/core'
+import { ux } from '@oclif/core/ux'
 import * as fs from 'fs'
-import * as path from 'path'
 import inquirer from 'inquirer'
-import {ux} from '@oclif/core/ux'
+import * as path from 'path'
 import api from '../api.js'
+import appConfig from '../appConfig.js'
 
 type NeedFileContentResponse = {need_file_contents: string[]}
 type NeedClarificationResponse = {need_clarification: string}
@@ -20,7 +21,10 @@ export default class MainCommand extends Command {
 
   static examples = []
 
-  static flags = {}
+  static flags = {
+    openAiApiKey: Flags.string({description: 'OpenAI API key', required: false}),
+    clean: Flags.boolean({description: 'Clean the project', char: 'c', required: false}),
+  }
 
   // use inquirer to ask file contents
   askFileContents = async (paths: string[]) => {
@@ -119,6 +123,33 @@ export default class MainCommand extends Command {
     return files
   }
   async run(): Promise<void> {
+    const {args, flags} = await this.parse(MainCommand)
+
+    if (flags.clean) {
+      this.log('cleaning the project...')
+      appConfig.clear()
+    }
+    let openAiApiKey = flags.openAiApiKey
+    if (!openAiApiKey) {
+      openAiApiKey = appConfig.get('apiKey')
+      if (!openAiApiKey) {
+        const answers = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'apiKey',
+            message: 'Please enter your API key',
+          },
+        ])
+        openAiApiKey = answers.apiKey
+        if (openAiApiKey) {
+          appConfig.set('apiKey', openAiApiKey)
+        }
+      }
+    }
+
+    if (!openAiApiKey) {
+      this.error('No API key provided')
+    }
     const filesAtRoot = (await this.getFilesAtRoot()).map((file) => `- ${file}`).join('\n')
     const inquirerMessage =
       'Dockerify will now send the list of files (NOT THEIR CONTENT) at the root of your project to the API. Do you accept to send this information?'
