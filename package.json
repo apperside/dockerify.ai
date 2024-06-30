@@ -1,12 +1,12 @@
 {
   "name": "dockerify.ai",
-  "description": "A cli to instantly make your project docker-ready",
+  "description": "Instantly make your project docker ready",
   "version": "0.0.3",
   "author": "Apperside",
   "bin": {
-    "dockerify": "./bin/run.js"
+    "dockerify-ai": "./bin/run.js"
   },
-  "bugs": "https://github.com/apperside/dockerify/issues",
+  "bugs": "https://github.com/apperside/dockerify.ai/issues",
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
@@ -47,7 +47,7 @@
     "/dist",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/apperside/dockerify",
+  "homepage": "https://github.com/apperside/dockerify.ai",
   "keywords": [
     "oclif"
   ],
@@ -72,7 +72,7 @@
       }
     }
   },
-  "repository": "apperside/dockerify",
+  "repository": "apperside/dockerify.ai",
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
     "lint": "eslint . --ext .ts",
