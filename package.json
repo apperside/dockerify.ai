@@ -1,7 +1,7 @@
 {
   "name": "dockerify.ai",
   "description": "Instantly make your project docker ready",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "author": "Apperside",
   "bin": {
     "dockerify-ai": "./bin/run.js"
