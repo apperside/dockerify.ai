@@ -20,7 +20,7 @@ $ npm install -g dockerify.ai
 $ dockerify COMMAND
 running command...
 $ dockerify (--version)
-dockerify.ai/0.0.5 darwin-x64 node-v18.20.3
+dockerify.ai/0.0.6 darwin-x64 node-v18.20.3
 $ dockerify --help [COMMAND]
 USAGE
   $ dockerify COMMAND
