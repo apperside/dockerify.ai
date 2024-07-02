@@ -1,5 +1,5 @@
-import { Command, Flags } from '@oclif/core'
-import { ux } from '@oclif/core/ux'
+import {Command, Flags} from '@oclif/core'
+import {ux} from '@oclif/core/ux'
 import * as fs from 'fs'
 import inquirer from 'inquirer'
 import * as path from 'path'
@@ -86,6 +86,32 @@ export default class MainCommand extends Command {
     }
     if ('files_to_generate' in data) {
       this.log(`Detected project type: ${data.type_of_project} because ${data.type_of_project_reason}`)
+      this.log(``)
+      this.log(``)
+      // ask if want to share additional info
+      const inquirerMessage =
+        'Do you want to share additional information about your project?\nFor example: I need postgres, redis or whatever'
+
+      const answers = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'accept',
+          message: inquirerMessage,
+        },
+      ])
+      if (answers.accept) {
+        const inquirerMessage = 'Please provide additional information about your project'
+        const answers = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'additional_info',
+            message: inquirerMessage,
+          },
+        ])
+        const result = await api.postMessage(answers.additional_info)
+        return (await this.parseResponse(result)) as any
+      }
+
       const inquirerCOnfirm = await inquirer.prompt([
         {
           type: 'confirm',
@@ -145,8 +171,7 @@ export default class MainCommand extends Command {
           appConfig.set('apiKey', openAiApiKey)
         }
       }
-    }
-    else{
+    } else {
       appConfig.set('apiKey', openAiApiKey)
     }
 
