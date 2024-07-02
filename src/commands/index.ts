@@ -146,6 +146,9 @@ export default class MainCommand extends Command {
         }
       }
     }
+    else{
+      appConfig.set('apiKey', openAiApiKey)
+    }
 
     if (!openAiApiKey) {
       this.error('No API key provided')
