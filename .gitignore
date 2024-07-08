@@ -6,6 +6,7 @@
 /tmp
 /node_modules
 oclif.manifest.json
+.npmrc
 
 package-lock.json
 pnpm-lock.yaml
@@ -16,6 +17,5 @@ pnpm-lock.yaml
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-
 
 
