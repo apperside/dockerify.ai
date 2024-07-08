@@ -30,7 +30,9 @@ export default class MainCommand extends Command {
     }),
   }
 
-  // use inquirer to ask file contents
+  /**
+   * Ask confirmation to the user to send the content of some files
+   */
   askFileContents = async (paths: string[]) => {
     let contents: string[] = []
     let counter = 0
@@ -59,7 +61,7 @@ export default class MainCommand extends Command {
         }, 2000)
       })
       await fakePromise
-      const fileContent = fs.readFileSync(path.join(process.cwd(), paths[counter]), 'utf8')
+      const fileContent = fs.readFileSync(path.join(this.getRootPath(), paths[counter]), 'utf8')
       contents.push(fileContent)
       ux.action.stop()
       counter++
@@ -72,7 +74,7 @@ export default class MainCommand extends Command {
       const newData = await this.askFileContents(data.need_file_contents)
       if (newData) {
         const result = await api.postMessage(newData)
-        return (await this.parseResponse(result)) as any
+        return this.parseResponse(result)
       }
       return ''
     }
@@ -86,7 +88,7 @@ export default class MainCommand extends Command {
         },
       ])
       const result = await api.postMessage(answers.clarification)
-      return (await this.parseResponse(result)) as any
+      return this.parseResponse(result)
     }
     if ('files_to_generate' in data) {
       this.log(`Detected project type: ${data.type_of_project} because ${data.type_of_project_reason}`)
@@ -113,7 +115,7 @@ export default class MainCommand extends Command {
           },
         ])
         const result = await api.postMessage(answers.additional_info)
-        return (await this.parseResponse(result)) as any
+        return this.parseResponse(result)
       }
 
       const inquirerCOnfirm = await inquirer.prompt([
@@ -133,12 +135,12 @@ export default class MainCommand extends Command {
         ])
 
         const result = await api.postMessage(askKindOfProject.kind_of_project)
-        return (await this.parseResponse(result)) as any
+        return this.parseResponse(result)
       }
       data.files_to_generate.forEach((file) => {
         try {
           ux.action.start('generating file ' + file.path + '...')
-          fs.writeFileSync(path.join(process.cwd(), file.path), file.fileContent, 'utf8')
+          fs.writeFileSync(path.join(this.getRootPath(), file.path), file.fileContent, 'utf8')
           ux.action.stop()
         } catch (err) {
           console.error('error generating file ' + file.path, err)
@@ -148,13 +150,18 @@ export default class MainCommand extends Command {
     }
   }
 
+  getRootPath = () => {
+    return appConfig.get('path') || process.cwd()
+  }
+
   getFilesAtRoot = async () => {
-    const files = fs.readdirSync(process.cwd())
+    const path = appConfig.get('path') || this.getRootPath()
+    const files = fs.readdirSync(path)
     return files
   }
 
   async run(): Promise<void> {
-    const {args, flags} = await this.parse(MainCommand)
+    const {flags} = await this.parse(MainCommand)
 
     /**
      * handle -c flag to clean saved preerences
@@ -164,6 +171,7 @@ export default class MainCommand extends Command {
       appConfig.clear()
     }
 
+    appConfig.set('path', flags.path || process.cwd())
     /**
      * handle openai api key retrieving:
      * - first check if it is passed with --openaiApiKey,
