@@ -42,3 +42,13 @@ At the moment what it will do is the following:
 - if it cannot manage to guess what kind of project it is, it will ask you the content of one or more file (<b><u>you will be asked for permissions before it happens</u></b>)
 - it eventually will ask you some kind of clarification
 - in the end, it will generate a docker file and a docker compose file
+
+
+
+
+# Roadmap
+
+- [ ] Add tests
+- [ ] Improve project type detection 
+- [ ] Handle more complicated scenarios (like monorepos)
+- [x] Custom prompt to add any required customization (like requesting to add some database to the docker compose file or any other publicily known docker image)
