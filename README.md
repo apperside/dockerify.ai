@@ -34,7 +34,7 @@ DESCRIPTION
 
 # How does it work?
 
-This is a very basic protptype of the project, it will be developed over time with new features and behaviours.
+This is a super early stage version of the project, it will be developed over time with new features and behaviours.
 
 At the moment what it will do is the following:
 - first it will read the files at the root of your project (<b><u>not their content</u></b>) and will send to openai to get an idea of the project type
