@@ -17,13 +17,17 @@ type FilesResponse = {
 export default class MainCommand extends Command {
   static args = {}
 
-  static description = 'Say hello world'
+  static description = 'Generates a working docker configuration'
 
   static examples = []
 
   static flags = {
     openAiApiKey: Flags.string({description: 'OpenAI API key', required: false}),
     clean: Flags.boolean({description: 'Clean the project', char: 'c', required: false}),
+    path: Flags.directory({
+      description: 'The root path of the project you want to generate the docker configuration for',
+      char: 'P',
+    }),
   }
 
   // use inquirer to ask file contents
@@ -148,13 +152,25 @@ export default class MainCommand extends Command {
     const files = fs.readdirSync(process.cwd())
     return files
   }
+
   async run(): Promise<void> {
     const {args, flags} = await this.parse(MainCommand)
 
+    /**
+     * handle -c flag to clean saved preerences
+     */
     if (flags.clean) {
       this.log('cleaning the project...')
       appConfig.clear()
     }
+
+    /**
+     * handle openai api key retrieving:
+     * - first check if it is passed with --openaiApiKey,
+     * in such case use it and save in preferences
+     * - if it isn't passed as param, check local saved config
+     * - if it not present ask it with inquirer
+     */
     let openAiApiKey = flags.openAiApiKey
     if (!openAiApiKey) {
       openAiApiKey = appConfig.get('apiKey')
@@ -178,6 +194,10 @@ export default class MainCommand extends Command {
     if (!openAiApiKey) {
       this.error('No API key provided')
     }
+
+    /**
+     * prepare to read the files at the path where the cli is passed
+     */
     const filesAtRoot = (await this.getFilesAtRoot()).map((file) => `- ${file}`).join('\n')
     const inquirerMessage =
       'Dockerify will now send the list of files (NOT THEIR CONTENT) at the root of your project to the API. Do you accept to send this information?'
