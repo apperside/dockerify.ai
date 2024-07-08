@@ -11,24 +11,21 @@ Instantly make your project docker ready
 
 <!-- toc -->
 * [Usage](#usage)
-* [How it works](#how-does-it-work)
+* [How does it work?](#how-does-it-work)
+* [Roadmap](#roadmap)
 <!-- tocstop -->
 # Usage
 <!-- usage -->
 ```sh-session
-$ npx dockerify.ai@latest
-
-
+$ npm install -g dockerify.ai
+$ dockerify COMMAND
+running command...
+$ dockerify (--version)
+dockerify.ai/0.0.7 darwin-x64 node-v18.20.3
+$ dockerify --help [COMMAND]
 USAGE
-  $ dockerify  [--openAiApiKey <value>] [-c] [-P <value>]
-
-FLAGS
-  -P, --path=<value>          The root path of the project you want to generate the docker configuration for
-  -c, --clean                 Clean the project
-      --openAiApiKey=<value>  OpenAI API key
-
-DESCRIPTION
-  Generates a working docker configuration
+  $ dockerify COMMAND
+...
 ```
 <!-- usagestop -->
 
