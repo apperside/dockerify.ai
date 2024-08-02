@@ -58,7 +58,7 @@
 ##  Overview
 
 Dockerify.ai leverages Docker, AI, and TypeScript to enhance the creation of docker related files. 
-With OpenAI integration, it allows interactive user inquiries and streamlines the creation of a docker file and a docker-compose file.
+With OpenAI integration, it allows interactive user inquiries and streamlines the creation of a working docker configuration for your project.
 
 ---
 
