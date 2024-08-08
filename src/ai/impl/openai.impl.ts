@@ -1,16 +1,14 @@
 import jsonic from 'jsonic'
-import OpenAI from 'openai'
+import {OpenAI} from 'openai'
 import {TextContentBlock} from 'openai/resources/beta/threads/messages.mjs'
 import ora from 'ora'
 import appConfig from '../../appConfig.js'
 import {IAI} from '../ai.js'
 
 export default class AppOpenAi implements IAI {
-  _openai!: OpenAI
-
   currentThread = ''
 
-  constructor() {}
+  _openai!: OpenAI
 
   get openai() {
     if (!this._openai) {
@@ -18,6 +16,7 @@ export default class AppOpenAi implements IAI {
         apiKey: appConfig.get('apiKey'),
       })
     }
+
     return this._openai
   }
 
@@ -30,11 +29,11 @@ export default class AppOpenAi implements IAI {
       }
 
       const openaiMessage = await this.openai.beta.threads.messages.create(this.currentThread, {
-        role: 'user',
         content: userMessage,
+        role: 'user',
       })
 
-      let run = await this.openai.beta.threads.runs.createAndPoll(this.currentThread, {
+      const run = await this.openai.beta.threads.runs.createAndPoll(this.currentThread, {
         assistant_id: assistantId,
       })
 
@@ -42,12 +41,12 @@ export default class AppOpenAi implements IAI {
         const messages = await this.openai.beta.threads.messages.list(run.thread_id)
         const res = (messages.data[0].content[0] as TextContentBlock).text.value
         return jsonic(res)
-      } else {
-        console.log(run.status)
       }
-    } catch (err) {
-      console.error(err)
-      throw err
+
+      console.log(run.status)
+    } catch (error) {
+      console.error(error)
+      throw error
     } finally {
       spinner.stop()
     }

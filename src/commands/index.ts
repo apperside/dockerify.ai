@@ -1,17 +1,17 @@
 import {Command, Flags} from '@oclif/core'
 import {ux} from '@oclif/core/ux'
-import * as fs from 'fs'
+import fs from 'node:fs'
 import inquirer from 'inquirer'
-import * as path from 'path'
+import path from 'node:path'
 import api from '../api.js'
 import appConfig from '../appConfig.js'
 
 type NeedFileContentResponse = {need_file_contents: string[]}
 type NeedClarificationResponse = {need_clarification: string}
 type FilesResponse = {
+  files_to_generate: {fileContent: string; path: string}[]
   type_of_project: string
   type_of_project_reason: string
-  files_to_generate: {path: string; fileContent: string}[]
 }
 
 export default class MainCommand extends Command {
@@ -22,11 +22,11 @@ export default class MainCommand extends Command {
   static examples = []
 
   static flags = {
+    clean: Flags.boolean({char: 'c', description: 'Clean the project', required: false}),
     openAiApiKey: Flags.string({description: 'OpenAI API key', required: false}),
-    clean: Flags.boolean({description: 'Clean the project', char: 'c', required: false}),
     path: Flags.directory({
-      description: 'The root path of the project you want to generate the docker configuration for',
       char: 'P',
+      description: 'The root path of the project you want to generate the docker configuration for',
     }),
   }
 
@@ -34,19 +34,19 @@ export default class MainCommand extends Command {
    * Ask confirmation to the user to send the content of some files
    */
   askFileContents = async (paths: string[]) => {
-    let contents: string[] = []
+    const contents: string[] = []
     let counter = 0
 
     let inquiredMessage = 'Dockerify needs the content of the following files, do you accept to provide them?'
-    paths.forEach((path) => {
+    for (const path of paths) {
       inquiredMessage += `\n- ${path}`
-    })
+    }
 
     const answers = await inquirer.prompt([
       {
-        type: 'confirm',
-        name: 'accept',
         message: inquiredMessage,
+        name: 'accept',
+        type: 'confirm',
       },
     ])
     if (!answers.accept) {
@@ -60,36 +60,49 @@ export default class MainCommand extends Command {
           resolve()
         }, 2000)
       })
+      // eslint-disable-next-line no-await-in-loop
       await fakePromise
       const fileContent = fs.readFileSync(path.join(this.getRootPath(), paths[counter]), 'utf8')
       contents.push(fileContent)
       ux.action.stop()
       counter++
     }
-    return contents.map((content, index) => `Here is the content of ${paths[index]}: \n\n ${content}    `).join('\n')
+
+    return contents.map((content, index) => `Here is the content of ${paths[index]}: \n\n ${content}   `).join('\n')
   }
 
-  parseResponse = async (data: NeedFileContentResponse | NeedClarificationResponse | FilesResponse): Promise<any> => {
+  getFilesAtRoot = async () => {
+    const path = appConfig.get('path') || this.getRootPath()
+    const files = fs.readdirSync(path)
+    return files
+  }
+
+  getRootPath = () => appConfig.get('path') || process.cwd()
+
+  parseResponse = async (data: FilesResponse | NeedClarificationResponse | NeedFileContentResponse): Promise<any> => {
     if ('need_file_contents' in data) {
       const newData = await this.askFileContents(data.need_file_contents)
       if (newData) {
         const result = await api.postMessage(newData)
         return this.parseResponse(result)
       }
+
       return ''
     }
+
     if ('need_clarification' in data) {
       const inquirerMessage = `Dockerify needs clarification on the following: \n\n ${data.need_clarification}`
       const answers = await inquirer.prompt([
         {
-          type: 'input',
-          name: 'clarification',
           message: inquirerMessage,
+          name: 'clarification',
+          type: 'input',
         },
       ])
       const result = await api.postMessage(answers.clarification)
       return this.parseResponse(result)
     }
+
     if ('files_to_generate' in data) {
       this.log(`Detected project type: ${data.type_of_project} because ${data.type_of_project_reason}`)
       this.log(``)
@@ -100,18 +113,18 @@ export default class MainCommand extends Command {
 
       const answers = await inquirer.prompt([
         {
-          type: 'confirm',
-          name: 'accept',
           message: inquirerMessage,
+          name: 'accept',
+          type: 'confirm',
         },
       ])
       if (answers.accept) {
         const inquirerMessage = 'Please provide additional information about your project'
         const answers = await inquirer.prompt([
           {
-            type: 'input',
-            name: 'additional_info',
             message: inquirerMessage,
+            name: 'additional_info',
+            type: 'input',
           },
         ])
         const result = await api.postMessage(answers.additional_info)
@@ -120,44 +133,36 @@ export default class MainCommand extends Command {
 
       const inquirerCOnfirm = await inquirer.prompt([
         {
-          type: 'confirm',
-          name: 'accept',
           message: 'Do you want to generate docker files for this kind of project?',
+          name: 'accept',
+          type: 'confirm',
         },
       ])
       if (!inquirerCOnfirm.accept) {
         const askKindOfProject = await inquirer.prompt([
           {
-            type: 'input',
-            name: 'kind_of_project',
             message: 'What kind of project is this?',
+            name: 'kind_of_project',
+            type: 'input',
           },
         ])
 
         const result = await api.postMessage(askKindOfProject.kind_of_project)
         return this.parseResponse(result)
       }
-      data.files_to_generate.forEach((file) => {
+
+      for (const file of data.files_to_generate) {
         try {
           ux.action.start('generating file ' + file.path + '...')
           fs.writeFileSync(path.join(this.getRootPath(), file.path), file.fileContent, 'utf8')
           ux.action.stop()
-        } catch (err) {
-          console.error('error generating file ' + file.path, err)
+        } catch (error) {
+          console.error('error generating file ' + file.path, error)
         }
-      })
+      }
+
       return 'your project has been dockerified! 🐳🎉'
     }
-  }
-
-  getRootPath = () => {
-    return appConfig.get('path') || process.cwd()
-  }
-
-  getFilesAtRoot = async () => {
-    const path = appConfig.get('path') || this.getRootPath()
-    const files = fs.readdirSync(path)
-    return files
   }
 
   async run(): Promise<void> {
@@ -179,28 +184,11 @@ export default class MainCommand extends Command {
      * - if it isn't passed as param, check local saved config
      * - if it not present ask it with inquirer
      */
-    let openAiApiKey = flags.openAiApiKey
-    if (!openAiApiKey) {
-      openAiApiKey = appConfig.get('apiKey')
-      if (!openAiApiKey) {
-        const answers = await inquirer.prompt([
-          {
-            type: 'input',
-            name: 'apiKey',
-            message: 'Please enter your API key',
-          },
-        ])
-        openAiApiKey = answers.apiKey
-        if (openAiApiKey) {
-          appConfig.set('apiKey', openAiApiKey)
-        }
-      }
-    } else {
+    let {openAiApiKey} = flags
+    if (openAiApiKey) {
       appConfig.set('apiKey', openAiApiKey)
-    }
-
-    if (!openAiApiKey) {
-      this.error('No API key provided')
+    } else {
+      openAiApiKey = appConfig.get('apiKey')
     }
 
     /**
@@ -211,19 +199,34 @@ export default class MainCommand extends Command {
       'Dockerify will now send the list of files (NOT THEIR CONTENT) at the root of your project to the API. Do you accept to send this information?'
     const answers = await inquirer.prompt([
       {
-        type: 'confirm',
-        name: 'accept',
         message: inquirerMessage,
+        name: 'accept',
+        type: 'confirm',
       },
     ])
     if (!answers.accept) {
       return
     }
+
+    const apiKeyAnswer = await inquirer.prompt([
+      {
+        message: 'Please enter your API key',
+        name: 'apiKey',
+        type: 'input',
+      },
+    ])
+    openAiApiKey = apiKeyAnswer.apiKey
+    if (openAiApiKey) {
+      appConfig.set('apiKey', openAiApiKey)
+    } else {
+      this.error('No API key provided')
+    }
+
     await api
       .postMessage(filesAtRoot)
       .then(this.parseResponse)
-      .catch((err) => {
-        console.error(err)
+      .catch((error) => {
+        console.error(error)
       })
     this.log('your project has been dockerified! 🐳🎉')
   }
