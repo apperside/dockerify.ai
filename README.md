@@ -1,9 +1,7 @@
 <p align="center">
-  <img src="https://cdn-icons-png.flaticon.com/512/6295/6295417.png" width="100" />
+  <img src="https://github.com/apperside/dockerify.ai/assets/5955338/a800fb9e-1ae3-4ae7-a482-0dd6a694fedd" width="300" />
 </p>
-<p align="center">
-    <h1 align="center">DOCKERIFY.AI</h1>
-</p>
+
 <p align="center">
     <em>Dockerify.AI: generate docker and docker-compose files with just one command!</em>
 </p>
@@ -60,7 +58,7 @@
 ##  Overview
 
 Dockerify.ai leverages Docker, AI, and TypeScript to enhance the creation of docker related files. 
-With OpenAI integration, it allows interactive user inquiries and streamlines the creation of a docker file and a docker-compose file.
+With OpenAI integration, it allows interactive user inquiries and streamlines the creation of a working docker configuration for your project.
 
 ---
 
